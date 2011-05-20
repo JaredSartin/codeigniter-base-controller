@@ -40,6 +40,7 @@ If you try to call a method that doesn't exist, the class will first look for a 
 Version History
 ---------------
 
+* 1.3.0 Updated to work with CodeIgniter 2.0
 * 1.2.0 A bugfix, support for custom model names and custom 404 messages.
 * 1.1.1 $this->data is now passed to layout, after the view is rendered
 * 1.1.0 Partial support, asides and an improvement to documentation

@@ -12,7 +12,7 @@
  * @author Jamie Rumbelow <http://jamierumbelow.net>
  * @copyright Copyright (c) 2009, Jamie Rumbelow <http://jamierumbelow.net>
  */
-class MY_Controller extends Controller {
+class MY_Controller extends CI_Controller {
 	
 	/**
 	 * The view to load, only set if you want
@@ -98,7 +98,7 @@ class MY_Controller extends Controller {
 	 * @author Jamie Rumbelow
 	 */
 	public function __construct() {
-	  parent::Controller();
+	  parent::__construct();
 		$this->_load_models();
 	}
 	
