@@ -8,7 +8,7 @@
  * @subpackage MY_Controller
  * @license GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
  * @link http://github.com/jamierumbelow/codeigniter-base-controller
- * @version 1.1.0
+ * @version 1.1.1
  * @author Jamie Rumbelow <http://jamierumbelow.net>
  * @copyright Copyright (c) 2009, Jamie Rumbelow <http://jamierumbelow.net>
  */
@@ -29,7 +29,7 @@ class MY_Controller extends Controller {
 	 *
 	 * @var array
 	 */
-	protected $data;
+	protected $data = array();
 	
 	/**
 	 * The layout to load the view into. Only
@@ -68,6 +68,27 @@ class MY_Controller extends Controller {
 	protected $models = array();
 	
 	/**
+	 * The model name formatting string. Use the
+	 * % symbol, which will be replaced with the model
+	 * name. This allows you to use model names like
+	 * m_model, model_m or model_model_m. Do whatever
+	 * suits you.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	protected $model_string = '%_model';
+	
+	/**
+	 * The prerendered data for output buffering
+	 * and the render() method. Generally left blank.
+	 *
+	 * @since 1.1.1
+	 * @var string
+	 */
+	protected $prerendered_data = '';
+	
+	/**
 	 * The class constructor, loads the models
 	 * from the $this->models array.
 	 *
@@ -90,7 +111,16 @@ class MY_Controller extends Controller {
 	 * @author Jamie Rumbelow
 	 */
 	public function _remap($method) {
-		call_user_func_array(array($this, $method), array_slice($this->uri->rsegments, 2));
+		if (method_exists($this, $method)) {
+			call_user_func_array(array($this, $method), array_slice($this->uri->rsegments, 2));
+		} else {
+			if (method_exists($this, '_404')) {
+				call_user_func_array(array($this, '_404'), array($method));	
+			} else {
+				show_404(strtolower(get_class($this)).'/'.$method);
+			}
+		}
+		
 		$this->_load_view();
 	}
 	
@@ -106,11 +136,10 @@ class MY_Controller extends Controller {
 	 */
 	private function _load_view() {
 		if ($this->view !== FALSE) {
-			$view = ($this->view !== null) ? $this->view . '.php' : $this->router->class . '/' . $this->router->method . '.php';
-
-			$data['yield']          = $this->prerendered_data;
-			$data['yield']         .= $this->load->view($view, $this->data, TRUE); 
-			$data['title']          = ($this->title !== null) ? $this->title : "Jamie Rumbelow Rocks!";
+			$view = ($this->view !== null) ? $this->view . '.php' : ((method_exists($this->router, 'fetch_module')) ? $this->router->fetch_module() . '/' : '') . $this->router->class . '/' . $this->router->method . '.php';
+			
+			$data['yield'] =  $this->prerendered_data;
+			$data['yield'] .= $this->load->view($view, $this->data, TRUE);
 			
 			if (!empty($this->asides)) {
 				foreach ($this->asides as $name => $file) {
@@ -118,14 +147,18 @@ class MY_Controller extends Controller {
 				}
 			}
 			
+			$data = array_merge($this->data, $data);
+			
 			if (!isset($this->layout)) {
 				if (file_exists(APPPATH . 'views/layouts/' . $this->router->class . '.php')) {
 					$this->load->view('layouts/' . $this->router->class . '.php', $data);
 				} else {
 				  $this->load->view('layouts/application.php', $data);
 				}
-			} else {
+			} else if ($this->layout !== FALSE) {
 				$this->load->view('layouts/' . $this->layout . '.php', $data);
+			} else {
+				$this->output->set_output($data['yield']);
 			}
 		}
 	}
@@ -138,8 +171,21 @@ class MY_Controller extends Controller {
 	 */
 	private function _load_models() {
 	  foreach ($this->models as $model) {
-	    $this->load->model($model.'_model', $model, TRUE);
+	    $this->load->model($this->_model_name($model), $model, TRUE);
 	  }
+	}
+	
+	/**
+	 * Returns the correct model name to load with, by
+	 * replacing the % symbol in $this->model_string.
+	 *
+	 * @param string $model The name of the model
+	 * @return string
+	 * @since 1.2.0
+	 * @author Jamie Rumbelow
+	 */
+	protected function _model_name($model) {
+		return str_replace('%', $model, $this->model_string);
 	}
 	
 	/**
@@ -161,7 +207,7 @@ class MY_Controller extends Controller {
 	 * @author Jamie Rumbelow
 	 */
 	protected function is_ajax() {
-		return ($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') ? TRUE : FALSE;
+		return ($this->input->server('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest') ? TRUE : FALSE;
 	}
 	
 	/**
@@ -190,19 +236,22 @@ class MY_Controller extends Controller {
 	 * @author Jamie Rumbelow and Jeremy Gimbel
 	 */
 	public function partial($name, $data = null, $loop = TRUE) {
+		$partial = '';
 		$name = $this->partial . '/' . $name;
 		
 		if (!isset($data)) {
-			return $this->load->view($name, array(), TRUE);
+			$partial = $this->load->view($name, array(), TRUE);
 		} else {
 			if ($loop == TRUE) {
 				foreach ($data as $row) {
-					return $this->load->view($name, (array)$data, TRUE);
+					$partial.= $this->load->view($name, (array)$row, TRUE);
 				}
 			} else {
-				return $this->load->view($name, $data, TRUE);
+				$partial.= $this->load->view($name, $data, TRUE);
 			}
 		}
+		
+		return $partial;
 	}
 	
 }
