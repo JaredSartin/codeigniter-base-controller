@@ -7,9 +7,10 @@
  * @package CodeIgniter
  * @subpackage MY_Controller
  * @license GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
- * @link http://github.com/jamierumbelow/codeigniter-base-controller
- * @version 1.1.1
+ * @link http://github.com/xphoenix777/codeigniter-base-controller
+ * @version 1.3.0
  * @author Jamie Rumbelow <http://jamierumbelow.net>
+ * @author Jared Sartin <http://jaredsartin.com>
  * @copyright Copyright (c) 2009, Jamie Rumbelow <http://jamierumbelow.net>
  */
 class MY_Controller extends CI_Controller {
